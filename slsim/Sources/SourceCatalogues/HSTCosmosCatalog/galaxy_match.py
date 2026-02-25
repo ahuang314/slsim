@@ -176,8 +176,8 @@ def process_catalog(cosmo, catalog_path):
         "GAL_HDU",
         "PIXEL_SCALE",
         "sersicfit",
-        "angular_size", # half light radius (geometric mean) in arcseconds
-        "physical_size", # kpc
+        "angular_size",  # half light radius (geometric mean) in arcseconds
+        "physical_size",  # kpc
     ]
 
     for col in filtered_catalog.colnames:
@@ -234,9 +234,7 @@ def match_source(
 
     # Keep sources within the physical size tolerance, all units in kPc
     size_tol = 0.5
-    size_difference = np.abs(
-        physical_size - processed_catalog["physical_size"].data
-    )
+    size_difference = np.abs(physical_size - processed_catalog["physical_size"].data)
     matched_catalog = processed_catalog[size_difference < size_tol]
     # If no sources, relax the matching condition and try again
     while len(matched_catalog) == 0:

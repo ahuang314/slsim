@@ -8,6 +8,7 @@ from astropy.nddata import Cutout2D
 
 from lenstronomy.Util.param_util import ellipticity2phi_q
 
+
 def process_catalog(cosmo, catalog_path):
     """This function filters out sources in the catalog so that only
     the nearby, well-resolved galaxies with high SNR remain. Thus, we
@@ -32,7 +33,7 @@ def process_catalog(cosmo, catalog_path):
     catalog_path = os.path.join(catalog_path, "COSMOSWeb_mastercatalog_v1.fits")
     photometry_table = Table.read(catalog_path, format="fits", hdu=1)
     lephare_table = Table.read(catalog_path, format="fits", hdu=2)
-    
+
     max_z = 1.0
     faintest_apparent_mag = 20
 
@@ -40,24 +41,33 @@ def process_catalog(cosmo, catalog_path):
 
     # filters out sources with artifacts/issues
     # see https://cosmos2025.iap.fr/catalog.html#quality-flags for warn_flag documentation
-    is_ok &= (photometry_table['warn_flag'].data == 0)
+    is_ok &= photometry_table["warn_flag"].data == 0
 
     # redshift cut
-    is_ok &= (lephare_table["zfinal"].data < max_z)
+    is_ok &= lephare_table["zfinal"].data < max_z
 
     # only includes galaxies
     # type = 0 is galaxies, type = 1 is stars, type = 2 is QSOs
-    is_ok &= (lephare_table["type"].data == 0)
+    is_ok &= lephare_table["type"].data == 0
 
     # magnitude cuts: apparent magnitude < 20 in at least one band
     is_ok2 = np.zeros_like(is_ok)
-    for band in ["mag_auto_f115w", "mag_auto_f150w", "mag_auto_f277w", "mag_auto_f444w", "mag_auto_f770w", "mag_auto_hst-f814w"]:
-        is_ok2 |= (photometry_table[band].data < faintest_apparent_mag)
+    for band in [
+        "mag_auto_f115w",
+        "mag_auto_f150w",
+        "mag_auto_f277w",
+        "mag_auto_f444w",
+        "mag_auto_f770w",
+        "mag_auto_hst-f814w",
+    ]:
+        is_ok2 |= photometry_table[band].data < faintest_apparent_mag
     is_ok &= is_ok2
 
     # Drop any remaining catalog sources that have nans within an 100x100 cutout
     # also drop sources that have other nearby sources/contaminants within 75 pixels
-    source_exclusion_list_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "source_exclusion_list.npy")
+    source_exclusion_list_file = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "source_exclusion_list.npy"
+    )
     with open(source_exclusion_list_file, "rb") as f:
         source_exclusion_list = np.load(f)
     is_ok &= np.invert(np.isin(np.arange(len(photometry_table)), source_exclusion_list))
@@ -67,7 +77,7 @@ def process_catalog(cosmo, catalog_path):
 
     # NOTE: catalog has different ellipticity and angle conventions; we overwrite them here
     e1 = -np.array(photometry_table["e2"], dtype=np.float64)
-    e2 = np.array(photometry_table['e1'], dtype=np.float64)
+    e2 = np.array(photometry_table["e1"], dtype=np.float64)
     angle_sersic, axratio_sersic = ellipticity2phi_q(e1=e1, e2=e2)
     photometry_table["angle_sersic"] = angle_sersic
     photometry_table["axratio_sersic"] = axratio_sersic
@@ -75,10 +85,12 @@ def process_catalog(cosmo, catalog_path):
     # radius_sersic is the half-light radius along the major axis
     # convert it to the geometric mean of the major and minor axis lengths
     # also convert from degrees to arcseconds and rename
-    q = photometry_table['axratio_sersic'].data
-    photometry_table["radius_sersic"] = np.sqrt(q) * photometry_table["radius_sersic"].data * 3600
+    q = photometry_table["axratio_sersic"].data
+    photometry_table["radius_sersic"] = (
+        np.sqrt(q) * photometry_table["radius_sersic"].data * 3600
+    )
     photometry_table.rename_column("radius_sersic", "angular_size")
-    
+
     # Convert angular_size to physical size (arcseconds to kPc)
     ang_dist = cosmo.angular_diameter_distance(lephare_table["zfinal"].data)
     photometry_table["physical_size"] = (
@@ -91,14 +103,14 @@ def process_catalog(cosmo, catalog_path):
     keep_columns = [
         "id",
         "tile",
-        "ra", # degrees
-        "dec", # degrees
-        "sersic", # sersic index n
-        "axratio_sersic", # axis ratio q
-        "angle_sersic", # radians, measured clockwise from north with origin at bottom left
-        "angular_size", # half light radius (geometric mean) in arcseconds
-        "physical_size", # kpc
-        "sersic_fit_chi2", # reduced chi^2 of the sersic model
+        "ra",  # degrees
+        "dec",  # degrees
+        "sersic",  # sersic index n
+        "axratio_sersic",  # axis ratio q
+        "angle_sersic",  # radians, measured clockwise from north with origin at bottom left
+        "angular_size",  # half light radius (geometric mean) in arcseconds
+        "physical_size",  # kpc
+        "sersic_fit_chi2",  # reduced chi^2 of the sersic model
     ]
 
     for col in photometry_table.colnames:
@@ -106,6 +118,7 @@ def process_catalog(cosmo, catalog_path):
             photometry_table.remove_column(col)
 
     return photometry_table
+
 
 def match_source(
     angular_size,
@@ -157,9 +170,7 @@ def match_source(
 
     # Keep sources within the physical size tolerance, all units in kPc
     size_tol = 0.5
-    size_difference = np.abs(
-        physical_size - processed_catalog["physical_size"].data
-    )
+    size_difference = np.abs(physical_size - processed_catalog["physical_size"].data)
     matched_catalog = processed_catalog[size_difference < size_tol]
     # If no sources, relax the matching condition and try again
     while len(matched_catalog) == 0:
@@ -191,7 +202,7 @@ def match_source(
     # load and save image
     tile = matched_source["tile"]
     image_file = catalog_path + f"/detection_images/detection_chi2pos_SWLW_{tile}.fits"
-    data = fits.getdata(image_file) 
+    data = fits.getdata(image_file)
 
     # Get WCS from the FITS header
     with fits.open(image_file) as hdul:
@@ -199,15 +210,13 @@ def match_source(
 
     # Create cutout centered at coords
     size = (100, 100)  # size in pixels (height, width)
-    coords = SkyCoord(matched_source['ra'], matched_source['dec'], unit='deg')
+    coords = SkyCoord(matched_source["ra"], matched_source["dec"], unit="deg")
     image = Cutout2D(data, coords, size, wcs=wcs).data
 
     # Scale the angular size of the COSMOS image so that it matches the source_dict
-    scale = (
-        0.03 * angular_size / matched_source["angular_size"]
-    )
+    scale = 0.03 * angular_size / matched_source["angular_size"]
 
     # Rotate the COSMOS image so that it matches the angle given in source_dict
-    phi = matched_source['angle_sersic'] - phi
+    phi = matched_source["angle_sersic"] - phi
 
     return image, scale, phi, matched_source["id"]

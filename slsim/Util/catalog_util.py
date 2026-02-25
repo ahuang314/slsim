@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def safe_value(val):
     """This function ensures that a value that we put into a pandas DataFrame
     is safe, i.e doesn't have mismatched datatypes.
