@@ -1,8 +1,8 @@
 from slsim.Sources.SourceTypes.single_sersic import SingleSersic
 from slsim.Sources.SourceTypes.source_base import SourceBase
-
 from slsim.Sources.SourceCatalogues.CosmosWebCatalog import galaxy_match as CosmosWeb
 from slsim.Sources.SourceCatalogues.HSTCosmosCatalog import galaxy_match as HSTCosmos
+from lenstronomy.Util.param_util import ellipticity2phi_q
 
 CATALOG_TYPES = ["HST_COSMOS, COSMOS_WEB"]
 
@@ -60,6 +60,7 @@ class CatalogSource(SourceBase):
         self.name = "GAL"
         self._angular_size = angular_size
         self._e1, self._e2 = e1, e2
+        self._phi, self._q = ellipticity2phi_q(e1=e1, e2=e2)
         self._n_sersic = n_sersic
         self._cosmo = cosmo
         self._max_scale = max_scale
@@ -107,8 +108,8 @@ class CatalogSource(SourceBase):
             self._image, self._scale, self._phi, self.galaxy_ID = self.match_source(
                 angular_size=self.angular_size,
                 physical_size=self.physical_size(cosmo=self._cosmo),
-                e1=self._e1,
-                e2=self._e2,
+                axis_ratio=self._q,
+                sersic_angle=self._phi,
                 n_sersic=self._n_sersic,
                 processed_catalog=self.final_catalog,
                 catalog_path=self.catalog_path,

@@ -124,8 +124,8 @@ def process_catalog(cosmo, catalog_path):
 def load_source(
     angular_size,
     physical_size,
-    e1,
-    e2,
+    axis_ratio,
+    sersic_angle,
     n_sersic,
     processed_catalog,
     catalog_path,
@@ -144,8 +144,8 @@ def load_source(
 
     :param angular_size: desired angular size of the source [arcsec]
     :param physical_size: desired physical size of the source [kpc]
-    :param e1: desired eccentricity modulus
-    :param e2: desired eccentricity modulus
+    :param axis_ratio: desired axis ratio
+    :param sersic_angle: desired sersic angle
     :param processed_catalog: the returned object from calling process_catalog()
     :param catalog_path: path to the directory containing the COSMOSWeb_mastercatalog_v1.fits and detection_images.
         This catalog can be downloaded from:
@@ -166,8 +166,7 @@ def load_source(
     matched_source = match_source(
         angular_size,
         physical_size,
-        e1,
-        e2,
+        axis_ratio,
         n_sersic,
         processed_catalog,
         max_scale,
@@ -192,6 +191,6 @@ def load_source(
     scale = 0.03 * angular_size / matched_source["angular_size"]
 
     # Rotate the COSMOS image so that it matches the angle given in source_dict
-    phi = matched_source["sersic_angle"] - phi
+    phi = matched_source["sersic_angle"] - sersic_angle
 
     return image, scale, phi, matched_source["id"]

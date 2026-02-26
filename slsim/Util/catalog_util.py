@@ -1,12 +1,9 @@
 import numpy as np
-from lenstronomy.Util.param_util import ellipticity2phi_q
-
 
 def match_source(
     angular_size,
     physical_size,
-    e1,
-    e2,
+    axis_ratio,
     n_sersic,
     processed_catalog,
     max_scale=1,
@@ -52,17 +49,16 @@ def match_source(
         size_tol += 0.2
         matched_catalog = processed_catalog[size_difference < size_tol]
 
-    phi, q = ellipticity2phi_q(e1, e2)
     # Keep sources within the axis ratio tolerance
     q_tol = 0.1
     q_matched_catalog = matched_catalog[
-        np.abs(matched_catalog["axis_ratio"].data - q) <= q_tol
+        np.abs(matched_catalog["axis_ratio"].data - axis_ratio) <= q_tol
     ]
     # If no sources, relax the tolerance and try again
     while len(q_matched_catalog) == 0:
         q_tol += 0.05
         q_matched_catalog = matched_catalog[
-            np.abs(matched_catalog["axis_ratio"].data - q) <= q_tol
+            np.abs(matched_catalog["axis_ratio"].data - axis_ratio) <= q_tol
         ]
 
     if match_n_sersic:
@@ -71,7 +67,7 @@ def match_source(
         matched_source = q_matched_catalog[index][0]
     else:
         # Select source based off of best matching axis ratio
-        index = np.argsort(np.abs(q_matched_catalog["axis_ratio"].data - q))
+        index = np.argsort(np.abs(q_matched_catalog["axis_ratio"].data - axis_ratio))
         matched_source = q_matched_catalog[index][0]
 
     return matched_source
