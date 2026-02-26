@@ -37,7 +37,6 @@ def match_source(
         match angular size, the angle of rotation needed to match the desired e1 and e2, and the galaxy ID.
     """
 
-
     processed_catalog = processed_catalog[
         angular_size <= processed_catalog["angular_size"].data * max_scale
     ]
@@ -46,9 +45,7 @@ def match_source(
 
     # Keep sources within the physical size tolerance, all units in kPc
     size_tol = 0.5
-    size_difference = np.abs(
-        physical_size - processed_catalog["physical_size"].data
-    )
+    size_difference = np.abs(physical_size - processed_catalog["physical_size"].data)
     matched_catalog = processed_catalog[size_difference < size_tol]
     # If no sources, relax the matching condition and try again
     while len(matched_catalog) == 0:

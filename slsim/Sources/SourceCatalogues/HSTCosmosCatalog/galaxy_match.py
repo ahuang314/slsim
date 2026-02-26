@@ -5,6 +5,7 @@ from astropy.io import fits
 
 from slsim.Util.catalog_util import match_source
 
+
 def process_catalog(cosmo, catalog_path):
     """This function filters out sources in the catalog so that only
     the nearby, well-resolved galaxies with high SNR remain. Thus, we
@@ -182,8 +183,8 @@ def process_catalog(cosmo, catalog_path):
         "axis_ratio",
         "sersic_index",
         "sersic_angle",
-        "angular_size", # half light radius (geometric mean) in arcseconds
-        "physical_size", # kpc
+        "angular_size",  # half light radius (geometric mean) in arcseconds
+        "physical_size",  # kpc
     ]
 
     for col in filtered_catalog.colnames:
@@ -231,7 +232,7 @@ def load_source(
      This is the raw image matched from the catalog, the scale that the image needs to
      match angular size, the angle of rotation needed to match the desired e1 and e2, and the galaxy ID.
     """
-    
+
     matched_source = match_source(
         angular_size,
         physical_size,

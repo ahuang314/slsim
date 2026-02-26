@@ -78,7 +78,7 @@ def process_catalog(cosmo, catalog_path):
 
     # NOTE: catalog has different ellipticity and angle conventions; we overwrite them here
     e1 = -np.array(photometry_table["e2"], dtype=np.float64)
-    e2 = np.array(photometry_table['e1'], dtype=np.float64)
+    e2 = np.array(photometry_table["e1"], dtype=np.float64)
     phi, q = ellipticity2phi_q(e1=e1, e2=e2)
     photometry_table["sersic_angle"] = phi
     photometry_table["axis_ratio"] = q
@@ -86,7 +86,9 @@ def process_catalog(cosmo, catalog_path):
     # radius_sersic is the half-light radius along the major axis
     # convert it to the geometric mean of the major and minor axis lengths
     # also convert from degrees to arcseconds and rename
-    photometry_table["radius_sersic"] = np.sqrt(q) * photometry_table["radius_sersic"].data * 3600
+    photometry_table["radius_sersic"] = (
+        np.sqrt(q) * photometry_table["radius_sersic"].data * 3600
+    )
     photometry_table.rename_column("radius_sersic", "angular_size")
 
     # Convert angular_size to physical size (arcseconds to kPc)
@@ -102,14 +104,14 @@ def process_catalog(cosmo, catalog_path):
     keep_columns = [
         "id",
         "tile",
-        "ra", # degrees
-        "dec", # degrees
-        "sersic_index", # sersic index n
-        "axis_ratio", # axis ratio q
-        "sersic_angle", # radians, measured clockwise from north with origin at bottom left
-        "angular_size", # half light radius (geometric mean) in arcseconds
-        "physical_size", # kpc
-        "sersic_fit_chi2", # reduced chi^2 of the sersic model
+        "ra",  # degrees
+        "dec",  # degrees
+        "sersic_index",  # sersic index n
+        "axis_ratio",  # axis ratio q
+        "sersic_angle",  # radians, measured clockwise from north with origin at bottom left
+        "angular_size",  # half light radius (geometric mean) in arcseconds
+        "physical_size",  # kpc
+        "sersic_fit_chi2",  # reduced chi^2 of the sersic model
     ]
 
     for col in photometry_table.colnames:
@@ -117,6 +119,7 @@ def process_catalog(cosmo, catalog_path):
             photometry_table.remove_column(col)
 
     return photometry_table
+
 
 def load_source(
     angular_size,
@@ -189,6 +192,6 @@ def load_source(
     scale = 0.03 * angular_size / matched_source["angular_size"]
 
     # Rotate the COSMOS image so that it matches the angle given in source_dict
-    phi = matched_source['sersic_angle'] - phi
+    phi = matched_source["sersic_angle"] - phi
 
     return image, scale, phi, matched_source["id"]
