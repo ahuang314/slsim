@@ -74,10 +74,8 @@ class CatalogSource(SourceBase):
             # Process catalog and store as class attribute
             # If multiple instances of the class are created with the same catalog type, the catalog is only processed once
             if not hasattr(CatalogSource, "processed_hst_cosmos_catalog"):
-                CatalogSource.processed_hst_cosmos_catalog = (
-                    HSTCosmos.process_catalog(
-                        cosmo=cosmo, catalog_path=catalog_path
-                    )
+                CatalogSource.processed_hst_cosmos_catalog = HSTCosmos.process_catalog(
+                    cosmo=cosmo, catalog_path=catalog_path
                 )
             self.final_catalog = CatalogSource.processed_hst_cosmos_catalog
 
@@ -86,10 +84,8 @@ class CatalogSource(SourceBase):
             self.match_source = CosmosWeb.load_source
 
             if not hasattr(CatalogSource, "processed_cosmos_web_catalog"):
-                CatalogSource.processed_cosmos_web_catalog = (
-                    CosmosWeb.process_catalog(
-                        cosmo=cosmo, catalog_path=catalog_path
-                    )
+                CatalogSource.processed_cosmos_web_catalog = CosmosWeb.process_catalog(
+                    cosmo=cosmo, catalog_path=catalog_path
                 )
             self.final_catalog = CatalogSource.processed_cosmos_web_catalog
         else:
@@ -108,18 +104,16 @@ class CatalogSource(SourceBase):
         :return: dictionary of keywords for the source light model(s)
         """
         if not hasattr(self, "_image"):
-            self._image, self._scale, self._phi, self.galaxy_ID = (
-                self.match_source(
-                    angular_size=self.angular_size,
-                    physical_size=self.physical_size(cosmo=self._cosmo),
-                    e1=self._e1,
-                    e2=self._e2,
-                    n_sersic=self._n_sersic,
-                    processed_catalog=self.final_catalog,
-                    catalog_path=self.catalog_path,
-                    max_scale=self._max_scale,
-                    match_n_sersic=self._match_n_sersic,
-                )
+            self._image, self._scale, self._phi, self.galaxy_ID = self.match_source(
+                angular_size=self.angular_size,
+                physical_size=self.physical_size(cosmo=self._cosmo),
+                e1=self._e1,
+                e2=self._e2,
+                n_sersic=self._n_sersic,
+                processed_catalog=self.final_catalog,
+                catalog_path=self.catalog_path,
+                max_scale=self._max_scale,
+                match_n_sersic=self._match_n_sersic,
             )
         # If the matching failed, fall back on a regular sersic profile
         if self._image is None:

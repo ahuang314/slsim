@@ -9,6 +9,7 @@ from astropy.nddata import Cutout2D
 from lenstronomy.Util.param_util import ellipticity2phi_q
 from slsim.Util.catalog_util import match_source
 
+
 def process_catalog(cosmo, catalog_path):
     """This function filters out sources in the catalog so that only
     the nearby, well-resolved galaxies with high SNR remain. Thus, we
@@ -33,7 +34,7 @@ def process_catalog(cosmo, catalog_path):
     catalog_path = os.path.join(catalog_path, "COSMOSWeb_mastercatalog_v1.fits")
     photometry_table = Table.read(catalog_path, format="fits", hdu=1)
     lephare_table = Table.read(catalog_path, format="fits", hdu=2)
-    
+
     max_z = 1.0
     faintest_apparent_mag = 20
 
@@ -41,24 +42,33 @@ def process_catalog(cosmo, catalog_path):
 
     # filters out sources with artifacts/issues
     # see https://cosmos2025.iap.fr/catalog.html#quality-flags for warn_flag documentation
-    is_ok &= (photometry_table['warn_flag'].data == 0)
+    is_ok &= photometry_table["warn_flag"].data == 0
 
     # redshift cut
-    is_ok &= (lephare_table["zfinal"].data < max_z)
+    is_ok &= lephare_table["zfinal"].data < max_z
 
     # only includes galaxies
     # type = 0 is galaxies, type = 1 is stars, type = 2 is QSOs
-    is_ok &= (lephare_table["type"].data == 0)
+    is_ok &= lephare_table["type"].data == 0
 
     # magnitude cuts: apparent magnitude < 20 in at least one band
     is_ok2 = np.zeros_like(is_ok)
-    for band in ["mag_auto_f115w", "mag_auto_f150w", "mag_auto_f277w", "mag_auto_f444w", "mag_auto_f770w", "mag_auto_hst-f814w"]:
-        is_ok2 |= (photometry_table[band].data < faintest_apparent_mag)
+    for band in [
+        "mag_auto_f115w",
+        "mag_auto_f150w",
+        "mag_auto_f277w",
+        "mag_auto_f444w",
+        "mag_auto_f770w",
+        "mag_auto_hst-f814w",
+    ]:
+        is_ok2 |= photometry_table[band].data < faintest_apparent_mag
     is_ok &= is_ok2
 
     # Drop any remaining catalog sources that have nans within an 100x100 cutout
     # also drop sources that have other nearby sources/contaminants within 75 pixels
-    source_exclusion_list_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "source_exclusion_list.npy")
+    source_exclusion_list_file = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "source_exclusion_list.npy"
+    )
     with open(source_exclusion_list_file, "rb") as f:
         source_exclusion_list = np.load(f)
     is_ok &= np.invert(np.isin(np.arange(len(photometry_table)), source_exclusion_list))
@@ -78,7 +88,7 @@ def process_catalog(cosmo, catalog_path):
     # also convert from degrees to arcseconds and rename
     photometry_table["radius_sersic"] = np.sqrt(q) * photometry_table["radius_sersic"].data * 3600
     photometry_table.rename_column("radius_sersic", "angular_size")
-    
+
     # Convert angular_size to physical size (arcseconds to kPc)
     ang_dist = cosmo.angular_diameter_distance(lephare_table["zfinal"].data)
     photometry_table["physical_size"] = (
@@ -164,7 +174,7 @@ def load_source(
     # load and save image
     tile = matched_source["tile"]
     image_file = catalog_path + f"/detection_images/detection_chi2pos_SWLW_{tile}.fits"
-    data = fits.getdata(image_file) 
+    data = fits.getdata(image_file)
 
     # Get WCS from the FITS header
     with fits.open(image_file) as hdul:
@@ -172,13 +182,11 @@ def load_source(
 
     # Create cutout centered at coords
     size = (100, 100)  # size in pixels (height, width)
-    coords = SkyCoord(matched_source['ra'], matched_source['dec'], unit='deg')
+    coords = SkyCoord(matched_source["ra"], matched_source["dec"], unit="deg")
     image = Cutout2D(data, coords, size, wcs=wcs).data
 
     # Scale the angular size of the COSMOS image so that it matches the source_dict
-    scale = (
-        0.03 * angular_size / matched_source["angular_size"]
-    )
+    scale = 0.03 * angular_size / matched_source["angular_size"]
 
     # Rotate the COSMOS image so that it matches the angle given in source_dict
     phi = matched_source['sersic_angle'] - phi
