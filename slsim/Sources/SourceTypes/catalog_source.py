@@ -69,7 +69,7 @@ class CatalogSource(SourceBase):
 
         if catalog_type == "HST_COSMOS":
 
-            self.match_source = HSTCosmos.match_source
+            self.match_source = HSTCosmos.load_source
 
             # Process catalog and store as class attribute
             # If multiple instances of the class are created with the same catalog type, the catalog is only processed once
@@ -83,7 +83,7 @@ class CatalogSource(SourceBase):
 
         elif catalog_type == "COSMOS_WEB":
 
-            self.match_source = CosmosWeb.match_source
+            self.match_source = CosmosWeb.load_source
 
             if not hasattr(CatalogSource, "processed_cosmos_web_catalog"):
                 CatalogSource.processed_cosmos_web_catalog = (

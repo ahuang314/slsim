@@ -7,6 +7,7 @@ from astropy.wcs import WCS
 from astropy.nddata import Cutout2D
 
 from lenstronomy.Util.param_util import ellipticity2phi_q
+from slsim.Util.catalog_util import match_source
 
 def process_catalog(cosmo, catalog_path):
     """This function filters out sources in the catalog so that only
@@ -68,14 +69,13 @@ def process_catalog(cosmo, catalog_path):
     # NOTE: catalog has different ellipticity and angle conventions; we overwrite them here
     e1 = -np.array(photometry_table["e2"], dtype=np.float64)
     e2 = np.array(photometry_table['e1'], dtype=np.float64)
-    angle_sersic, axratio_sersic = ellipticity2phi_q(e1=e1, e2=e2)
-    photometry_table["angle_sersic"] = angle_sersic
-    photometry_table["axratio_sersic"] = axratio_sersic
+    phi, q = ellipticity2phi_q(e1=e1, e2=e2)
+    photometry_table["sersic_angle"] = phi
+    photometry_table["axis_ratio"] = q
 
     # radius_sersic is the half-light radius along the major axis
     # convert it to the geometric mean of the major and minor axis lengths
     # also convert from degrees to arcseconds and rename
-    q = photometry_table['axratio_sersic'].data
     photometry_table["radius_sersic"] = np.sqrt(q) * photometry_table["radius_sersic"].data * 3600
     photometry_table.rename_column("radius_sersic", "angular_size")
     
@@ -86,6 +86,7 @@ def process_catalog(cosmo, catalog_path):
     )
 
     photometry_table.rename_column("fmf_chi2", "sersic_fit_chi2")
+    photometry_table.rename_column("sersic", "sersic_index")
 
     # drop extraneous data
     keep_columns = [
@@ -93,9 +94,9 @@ def process_catalog(cosmo, catalog_path):
         "tile",
         "ra", # degrees
         "dec", # degrees
-        "sersic", # sersic index n
-        "axratio_sersic", # axis ratio q
-        "angle_sersic", # radians, measured clockwise from north with origin at bottom left
+        "sersic_index", # sersic index n
+        "axis_ratio", # axis ratio q
+        "sersic_angle", # radians, measured clockwise from north with origin at bottom left
         "angular_size", # half light radius (geometric mean) in arcseconds
         "physical_size", # kpc
         "sersic_fit_chi2", # reduced chi^2 of the sersic model
@@ -107,7 +108,7 @@ def process_catalog(cosmo, catalog_path):
 
     return photometry_table
 
-def match_source(
+def load_source(
     angular_size,
     physical_size,
     e1,
@@ -149,44 +150,16 @@ def match_source(
      match angular size, the angle of rotation needed to match the desired e1 and e2, and the galaxy ID.
     """
 
-    processed_catalog = processed_catalog[
-        angular_size <= processed_catalog["angular_size"].data * max_scale
-    ]
-    if len(processed_catalog) == 0:
-        return None, None, None, None
-
-    # Keep sources within the physical size tolerance, all units in kPc
-    size_tol = 0.5
-    size_difference = np.abs(
-        physical_size - processed_catalog["physical_size"].data
+    matched_source = match_source(
+        angular_size,
+        physical_size,
+        e1,
+        e2,
+        n_sersic,
+        processed_catalog,
+        max_scale,
+        match_n_sersic,
     )
-    matched_catalog = processed_catalog[size_difference < size_tol]
-    # If no sources, relax the matching condition and try again
-    while len(matched_catalog) == 0:
-        size_tol += 0.2
-        matched_catalog = processed_catalog[size_difference < size_tol]
-
-    phi, q = ellipticity2phi_q(e1, e2)
-    # Keep sources within the axis ratio tolerance
-    q_tol = 0.1
-    q_matched_catalog = matched_catalog[
-        np.abs(matched_catalog["axratio_sersic"].data - q) <= q_tol
-    ]
-    # If no sources, relax the tolerance and try again
-    while len(q_matched_catalog) == 0:
-        q_tol += 0.05
-        q_matched_catalog = matched_catalog[
-            np.abs(matched_catalog["axratio_sersic"].data - q) <= q_tol
-        ]
-
-    if match_n_sersic:
-        # Select source based off of best matching n_sersic
-        index = np.argsort(np.abs(q_matched_catalog["sersic"].data - n_sersic))
-        matched_source = q_matched_catalog[index][0]
-    else:
-        # Select source based off of best matching axis ratio
-        index = np.argsort(np.abs(q_matched_catalog["axratio_sersic"].data - q))
-        matched_source = q_matched_catalog[index][0]
 
     # load and save image
     tile = matched_source["tile"]
@@ -208,6 +181,6 @@ def match_source(
     )
 
     # Rotate the COSMOS image so that it matches the angle given in source_dict
-    phi = matched_source['angle_sersic'] - phi
+    phi = matched_source['sersic_angle'] - phi
 
     return image, scale, phi, matched_source["id"]
