@@ -2,8 +2,6 @@ import os
 import numpy as np
 from astropy.table import Table
 from astropy.io import fits
-from astropy.coordinates import SkyCoord
-from astropy.wcs import WCS
 from astropy.nddata import Cutout2D
 
 from lenstronomy.Util.param_util import ellipticity2phi_q
@@ -108,8 +106,8 @@ def process_catalog(cosmo, catalog_path):
     keep_columns = [
         "id",
         "tile",
-        "ra",  # degrees
-        "dec",  # degrees
+        "x_image",  # coordinates of the source on the detection image in units of pixels
+        "y_image",  # coordinates of the source on the detection image in units of pixels
         "sersic_index",  # sersic index n
         "axis_ratio",  # axis ratio q
         "sersic_angle",  # radians, measured clockwise from north with origin at bottom left
@@ -185,14 +183,10 @@ def load_source(
     image_file = catalog_path + f"/detection_images/detection_chi2pos_SWLW_{tile}.fits"
     data = fits.getdata(image_file)
 
-    # Get WCS from the FITS header
-    with fits.open(image_file) as hdul:
-        wcs = WCS(hdul[0].header)
-
     # Create cutout centered at coords
     size = (100, 100)  # size in pixels (height, width)
-    coords = SkyCoord(matched_source["ra"], matched_source["dec"], unit="deg")
-    image = Cutout2D(data, coords, size, wcs=wcs).data
+    coords = (matched_source["x_image"], matched_source["y_image"])
+    image = Cutout2D(data, coords, size).data
 
     # Scale the angular size of the COSMOS image so that it matches the source_dict
     scale = 0.03 * angular_size / matched_source["angular_size"]
