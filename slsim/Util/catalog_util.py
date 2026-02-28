@@ -14,14 +14,17 @@ def match_source(
     corresponding source in a source catalog. The parameters being
     matched are:
 
-    1. physical size: the tolerance starts at 0.5 kPc and increases by 0.2 until at least one match
-    2. axis ratio: the tolerance starts at 0.1 and increases by 0.05 until at least one match
-    3. n_sersic: if match_n_sersic is True, finally selects the source with the best matching n_sersic
+    1. physical size
+    2. axis ratio
+    3. n_sersic only if match_n_sersic is True
+
+    Each parameter being matched is normalized so that the max is 1 and min is 0.
+    Matching is then performed by selecting the nearest point in 2D space (3D if match_n_sersic is True).
 
     :param angular_size: desired angular size of the source [arcsec]
     :param physical_size: desired physical size of the source [kpc]
-    :param e1: desired eccentricity modulus
-    :param e2: desired eccentricity modulus
+    :param axis_ratio: desired axis ratio
+    :param sersic_angle: desired sersic angle
     :param processed_catalog: the returned object from calling process_catalog()
         See e.g. slsim/Sources/SourceCatalogues HSTCosmosCatalog or CosmosWebCatalog
     :param max_scale: The matched image will be scaled to have the desired angular size. Scaling up
@@ -35,44 +38,59 @@ def match_source(
         match angular size, the angle of rotation needed to match the desired e1 and e2, and the galaxy ID.
     """
 
+    # Later, the matched image will be scaled to match angular size
+    # We want to avoid upscaling to prevent pixelization of the image
     processed_catalog = processed_catalog[
         angular_size <= processed_catalog["angular_size"].data * max_scale
     ]
     if len(processed_catalog) == 0:
         return None, None, None, None
 
-    # Keep sources within the physical size tolerance, all units in kPc
-    size_tol = 0.5
-    size_difference = np.abs(physical_size - processed_catalog["physical_size"].data)
-    matched_catalog = processed_catalog[size_difference < size_tol]
-    # If no sources, relax the matching condition and try again
-    while len(matched_catalog) == 0:
-        size_tol += 0.2
-        matched_catalog = processed_catalog[size_difference < size_tol]
+    physical_sizes = np.append(processed_catalog["physical_size"].data, physical_size)
+    physical_sizes = normalize_features(physical_sizes, norm_type="minmax")
 
-    # Keep sources within the axis ratio tolerance
-    q_tol = 0.1
-    q_matched_catalog = matched_catalog[
-        np.abs(matched_catalog["axis_ratio"].data - axis_ratio) <= q_tol
-    ]
-    # If no sources, relax the tolerance and try again
-    while len(q_matched_catalog) == 0:
-        q_tol += 0.05
-        q_matched_catalog = matched_catalog[
-            np.abs(matched_catalog["axis_ratio"].data - axis_ratio) <= q_tol
-        ]
+    axis_ratios = np.append(processed_catalog["axis_ratio"].data, axis_ratio)
+    axis_ratios = normalize_features(axis_ratios, norm_type="minmax")
+    
+    distances = (physical_sizes[:-1] - physical_sizes[-1])**2 + (axis_ratios[:-1] - axis_ratios[-1])**2
 
     if match_n_sersic:
-        # Select source based off of best matching n_sersic
-        index = np.argsort(np.abs(q_matched_catalog["sersic_index"].data - n_sersic))
-        matched_source = q_matched_catalog[index][0]
-    else:
-        # Select source based off of best matching axis ratio
-        index = np.argsort(np.abs(q_matched_catalog["axis_ratio"].data - axis_ratio))
-        matched_source = q_matched_catalog[index][0]
+        n_sersics = np.append(processed_catalog["sersic_index"].data, n_sersic)
+        n_sersics = normalize_features(n_sersics, norm_type="minmax")
+        distances += (n_sersics[:-1] - n_sersics[-1])**2
+
+    matched_source = processed_catalog[np.argmin(distances)]
 
     return matched_source
 
+def normalize_features(data, norm_type='zscore', data_min=None, data_max=None):
+    """Normalizes a 1D array of data.
+    
+    :param data: 1d array of data
+    :param norm_type: string indicating the type of normalization to apply
+    :param data_min: minimum value of the data (can be used to override the default scaling)
+    :param data_max: maximum value of the data (can be used to override the default scaling)
+    :return: normalized 1d array of data
+    """
+
+    data = np.array(data, dtype=float)
+    
+    if norm_type == 'minmax':
+        d_min = data_min if data_min is not None else np.nanmin(data)
+        d_max = data_max if data_max is not None else np.nanmax(data)
+        if d_max == d_min: # Prevent division by zero
+            return np.zeros_like(data)
+        return (data - d_min) / (d_max - d_min)
+        
+    elif norm_type == 'zscore':
+        mean = np.nanmean(data)
+        std = np.nanstd(data)
+        if std == 0:
+            return np.zeros_like(data)
+        return (data - mean) / std
+        
+    else:
+        raise ValueError("Unsupported normalization type. Use 'minmax' or 'zscore'.")
 
 def safe_value(val):
     """This function ensures that a value that we put into a pandas DataFrame

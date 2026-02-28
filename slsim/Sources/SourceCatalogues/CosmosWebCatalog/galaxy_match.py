@@ -47,6 +47,10 @@ def process_catalog(cosmo, catalog_path):
     # redshift cut
     is_ok &= lephare_table["zfinal"].data < max_z
 
+    # Some galaxies have their redshifts in the catalog set to -99
+    # The documentation does not explain why; filter these galaxies out
+    is_ok &= lephare_table["zfinal"].data != -99
+
     # only includes galaxies
     # type = 0 is galaxies, type = 1 is stars, type = 2 is QSOs
     is_ok &= lephare_table["type"].data == 0
@@ -64,7 +68,7 @@ def process_catalog(cosmo, catalog_path):
         is_ok2 |= photometry_table[band].data < faintest_apparent_mag
     is_ok &= is_ok2
 
-    # Drop any remaining catalog sources that have nans within an 100x100 cutout
+    # Drop any remaining catalog sources that have nans within a 100x100 cutout
     # also drop sources that have other nearby sources/contaminants within 75 pixels
     source_exclusion_list_file = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "source_exclusion_list.npy"
@@ -136,11 +140,12 @@ def load_source(
     corresponding source in the COSMOSWeb catalog. The parameters being
     matched are:
 
-    1. physical size: the tolerance starts at 0.5 kPc and increases by 0.2 until at least one match
-    2. axis ratio: the tolerance starts at 0.1 and increases by 0.05 until at least one match
-    3. n_sersic: if match_n_sersic is True, finally selects the source with the best matching n_sersic
+    1. physical size
+    2. axis ratio
+    3. n_sersic only if match_n_sersic is True
 
-    When many matches are found, the match with the best n_sersic is taken.
+    Each parameter being matched is normalized so that the max is 1 and min is 0.
+    Matching is then performed by selecting the nearest point in 2D space (3D if match_n_sersic is True).
 
     :param angular_size: desired angular size of the source [arcsec]
     :param physical_size: desired physical size of the source [kpc]

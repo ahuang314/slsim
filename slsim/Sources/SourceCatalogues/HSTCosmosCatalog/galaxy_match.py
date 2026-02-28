@@ -209,11 +209,12 @@ def load_source(
     corresponding source in the COSMOS catalog. The parameters being
     matched are:
 
-    1. physical size: the tolerance starts at 0.5 kPc and increases by 0.2 until at least one match
-    2. axis ratio: the tolerance starts at 0.1 and increases by 0.05 until at least one match
-    3. n_sersic: if match_n_sersic is True, finally selects the source with the best matching n_sersic
+    1. physical size
+    2. axis ratio
+    3. n_sersic only if match_n_sersic is True
 
-    When many matches are found, the match with the best n_sersic is taken.
+    Each parameter being matched is normalized so that the max is 1 and min is 0.
+    Matching is then performed by selecting the nearest point in 2D space (3D if match_n_sersic is True).
 
     :param angular_size: desired angular size of the source [arcsec]
     :param physical_size: desired physical size of the source [kpc]
