@@ -17,10 +17,15 @@ from slsim.Lenses.lens import Lens
 from slsim.ImageSimulation.image_simulation import lens_image
 from slsim.Util.param_util import gaussian_psf
 
-catalog_path = os.path.join(
-    str(pathlib.Path(__file__).parent.parent.parent.parent),
-    "data",
+hst_cosmos_path = os.path.join(
+    str(pathlib.Path(__file__).parent.parent.parent),
+    "TestData",
     "test_COSMOS_23.5_training_sample",
+)
+cosmos_web_path = os.path.join(
+    str(pathlib.Path(__file__).parent.parent.parent),
+    "TestData",
+    "test_COSMOS_WEB",
 )
 
 
@@ -38,39 +43,53 @@ class TestCatalogSource:
             "center_y": 0.0,
             "phi_G": 0,
         }
-        self.source = CatalogSource(
-            cosmo=cosmo, catalog_path=catalog_path, catalog_type="COSMOS", **source_dict
+        self.source1 = CatalogSource(
+            cosmo=cosmo, catalog_path=hst_cosmos_path, catalog_type="HST_COSMOS", **source_dict
         )
 
-    def test_kwargs_extended_source_light(self):
-        light_model_list, results = self.source.kwargs_extended_light(band="i")
-        _, results2 = self.source.kwargs_extended_light(band=None)
+        self.source2 = CatalogSource(
+            cosmo=cosmo, catalog_path=cosmos_web_path, catalog_type="COSMOS_WEB", **source_dict
+        )
 
-        with fits.open(catalog_path + "/test_galaxy_images_23.5.fits") as file:
+    def test_init_catalog(self):
+        assert self.source1.final_catalog == CatalogSource.processed_hst_cosmos_catalog
+        assert len(CatalogSource.processed_hst_cosmos_catalog) == 2262
+        assert self.source2.final_catalog == CatalogSource.processed_cosmos_web_catalog
+        assert len(CatalogSource.processed_cosmos_web_catalog) == 2810
+
+    def test_kwargs_extended_source_light(self):
+        light_model_list1, results = self.source1.kwargs_extended_light(band="i")
+        _, results2 = self.source1.kwargs_extended_light(band=None)
+
+        with fits.open(hst_cosmos_path + "/test_galaxy_images_23.5.fits") as file:
             image_ref = file[2].data
 
         np.testing.assert_allclose(results[0]["image"], image_ref)
         assert results[0]["magnitude"] == 20.3
         assert results2[0]["magnitude"] == 1
 
+        light_model_list2, results3 = self.source2.kwargs_extended_light(band="i")
+        assert light_model_list1 == light_model_list2
+        assert results3[0]["magnitude"] == 20.3
+
     def test_redshift(self):
-        assert self.source.redshift == 3.5
+        assert self.source1.redshift == 3.5
 
     def test_angular_size(self):
-        assert self.source.angular_size == 0.3
+        assert self.source1.angular_size == 0.3
 
     def test_ellipticity(self):
-        e1, e2 = self.source.ellipticity
+        e1, e2 = self.source1.ellipticity
         assert e1 == 0.19697001616620306
         assert e2 == 0.040998265256000574
 
     def test_extended_source_magnitude(self):
-        assert self.source.extended_source_magnitude("i") == 20.3
+        assert self.source1.extended_source_magnitude("i") == 20.3
         with pytest.raises(ValueError):
-            self.source.extended_source_magnitude("g")
+            self.source1.extended_source_magnitude("g")
 
     def test_extended_source_light_model(self):
-        source_model, kwargs_light = self.source.kwargs_extended_light()
+        source_model, kwargs_light = self.source1.kwargs_extended_light()
         assert source_model[0] == "INTERPOL"
 
     def test_raises(self):
@@ -90,13 +109,13 @@ class TestCatalogSource:
             ValueError,
             CatalogSource,
             cosmo=cosmo,
-            catalog_path=catalog_path,
+            catalog_path=hst_cosmos_path,
             catalog_type="incorrect",
             **source_dict,
         )
 
         source = CatalogSource(
-            cosmo=cosmo, catalog_path=catalog_path, catalog_type="COSMOS", **source_dict
+            cosmo=cosmo, catalog_path=hst_cosmos_path, catalog_type="HST_COSMOS", **source_dict
         )
         np.testing.assert_raises(
             ValueError,
@@ -119,8 +138,8 @@ class TestCatalogSource:
 
         source1 = CatalogSource(
             cosmo=cosmo,
-            catalog_path=catalog_path,
-            catalog_type="COSMOS",
+            catalog_path=hst_cosmos_path,
+            catalog_type="HST_COSMOS",
             max_scale=0.1,
             sersic_fallback=True,
             **source_dict,
@@ -151,8 +170,8 @@ def test_source1():
     source1 = Source(
         extended_source_type="catalog_source",
         cosmo=cosmo,
-        catalog_path=catalog_path,
-        catalog_type="COSMOS",
+        catalog_path=hst_cosmos_path,
+        catalog_type="HST_COSMOS",
         match_n_sersic=False,
         **source_dict,
     )
@@ -250,8 +269,8 @@ def test_source2():
     source1 = Source(
         extended_source_type="catalog_source",
         cosmo=cosmo,
-        catalog_path=catalog_path,
-        catalog_type="COSMOS",
+        catalog_path=hst_cosmos_path,
+        catalog_type="HST_COSMOS",
         match_n_sersic=True,
         **source_dict,
     )
@@ -353,8 +372,8 @@ def test_galaxies():
         source_size=None,
         extended_source_type="catalog_source",
         extended_source_kwargs={
-            "catalog_path": catalog_path,
-            "catalog_type": "COSMOS",
+            "catalog_path": hst_cosmos_path,
+            "catalog_type": "HST_COSMOS",
         },
     )
     source = source_simulation.draw_source()
