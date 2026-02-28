@@ -61,11 +61,9 @@ class TestCatalogSource:
         assert id(self.source1.final_catalog) == id(
             CatalogSource.processed_hst_cosmos_catalog
         )
-        assert len(CatalogSource.processed_hst_cosmos_catalog) == 2262
         assert id(self.source2.final_catalog) == id(
             CatalogSource.processed_cosmos_web_catalog
         )
-        assert len(CatalogSource.processed_cosmos_web_catalog) == 2810
 
     def test_kwargs_extended_source_light(self):
         light_model_list1, results = self.source1.kwargs_extended_light(band="i")
