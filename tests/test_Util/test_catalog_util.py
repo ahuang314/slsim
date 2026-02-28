@@ -19,8 +19,16 @@ def test_normalize_features():
         rtol=1e-15,
     )
 
-    npt.assert_raises(ValueError, normalize_features, data=x, norm_type="incorrect")
 
+    x = np.ones(10) * 51
+    y = np.zeros_like(x)
+    normalized_x = normalize_features(x, norm_type="minmax")
+    npt.assert_equal(normalized_x, y)
+
+    normalized_x = normalize_features(x, norm_type="zscore")
+    npt.assert_equal(normalized_x, y)
+
+    npt.assert_raises(ValueError, normalize_features, data=x, norm_type="incorrect")
 
 if __name__ == "__main__":
     pytest.main()

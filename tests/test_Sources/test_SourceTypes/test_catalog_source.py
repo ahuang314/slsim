@@ -158,6 +158,16 @@ class TestCatalogSource:
         source2 = SingleSersic(**source_dict)
         assert source1.kwargs_extended_light() == source2.kwargs_extended_light()
 
+        source1 = CatalogSource(
+            cosmo=cosmo,
+            catalog_path=cosmos_web_path,
+            catalog_type="COSMOS_WEB",
+            max_scale=0.1,
+            sersic_fallback=True,
+            **source_dict,
+        )
+        assert source1.kwargs_extended_light() == source2.kwargs_extended_light()
+
 
 def test_source1():
     # Set match_n_sersic to False
