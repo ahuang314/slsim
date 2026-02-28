@@ -44,7 +44,7 @@ def match_source(
         angular_size <= processed_catalog["angular_size"].data * max_scale
     ]
     if len(processed_catalog) == 0:
-        return None, None, None, None
+        return None
 
     physical_sizes = np.append(processed_catalog["physical_size"].data, physical_size)
     physical_sizes = normalize_features(physical_sizes, norm_type="minmax")

@@ -177,6 +177,8 @@ def load_source(
         max_scale,
         match_n_sersic,
     )
+    if matched_source is None:
+        return None, None, None, None
 
     # load and save image
     tile = matched_source["tile"]
