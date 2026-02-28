@@ -93,7 +93,7 @@ SNIa_Lens = Lens(
 )
 
 PSF_DIRECTORY = os.path.join(
-    str(pathlib.Path(__file__).parent.parent.parent), "TestData"
+    str(pathlib.Path(__file__).parent.parent), "TestData"
 )
 
 DETECTOR_KWARGS = {
