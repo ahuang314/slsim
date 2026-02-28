@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import testing as npt
-from slsim.Util.catalog_util import *
+from slsim.Util.catalog_util import normalize_features
 import pytest
 
 # catalog source matching is tested in test_Sources/testSourceTypes/test_catalog_source.py
