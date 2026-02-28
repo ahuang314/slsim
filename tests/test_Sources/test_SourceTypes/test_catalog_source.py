@@ -44,11 +44,17 @@ class TestCatalogSource:
             "phi_G": 0,
         }
         self.source1 = CatalogSource(
-            cosmo=cosmo, catalog_path=hst_cosmos_path, catalog_type="HST_COSMOS", **source_dict
+            cosmo=cosmo,
+            catalog_path=hst_cosmos_path,
+            catalog_type="HST_COSMOS",
+            **source_dict,
         )
 
         self.source2 = CatalogSource(
-            cosmo=cosmo, catalog_path=cosmos_web_path, catalog_type="COSMOS_WEB", **source_dict
+            cosmo=cosmo,
+            catalog_path=cosmos_web_path,
+            catalog_type="COSMOS_WEB",
+            **source_dict,
         )
 
     def test_init_catalog(self):
@@ -115,7 +121,10 @@ class TestCatalogSource:
         )
 
         source = CatalogSource(
-            cosmo=cosmo, catalog_path=hst_cosmos_path, catalog_type="HST_COSMOS", **source_dict
+            cosmo=cosmo,
+            catalog_path=hst_cosmos_path,
+            catalog_type="HST_COSMOS",
+            **source_dict,
         )
         np.testing.assert_raises(
             ValueError,
