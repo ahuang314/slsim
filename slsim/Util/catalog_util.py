@@ -51,46 +51,53 @@ def match_source(
 
     axis_ratios = np.append(processed_catalog["axis_ratio"].data, axis_ratio)
     axis_ratios = normalize_features(axis_ratios, norm_type="minmax")
-    
-    distances = (physical_sizes[:-1] - physical_sizes[-1])**2 + (axis_ratios[:-1] - axis_ratios[-1])**2
+
+    distances = (physical_sizes[:-1] - physical_sizes[-1]) ** 2 + (
+        axis_ratios[:-1] - axis_ratios[-1]
+    ) ** 2
 
     if match_n_sersic:
         n_sersics = np.append(processed_catalog["sersic_index"].data, n_sersic)
         n_sersics = normalize_features(n_sersics, norm_type="minmax")
-        distances += (n_sersics[:-1] - n_sersics[-1])**2
+        distances += (n_sersics[:-1] - n_sersics[-1]) ** 2
 
     matched_source = processed_catalog[np.argmin(distances)]
 
     return matched_source
 
-def normalize_features(data, norm_type='zscore', data_min=None, data_max=None):
+
+def normalize_features(data, norm_type="zscore", data_min=None, data_max=None):
     """Normalizes a 1D array of data.
-    
+
     :param data: 1d array of data
-    :param norm_type: string indicating the type of normalization to apply
-    :param data_min: minimum value of the data (can be used to override the default scaling)
-    :param data_max: maximum value of the data (can be used to override the default scaling)
+    :param norm_type: string indicating the type of normalization to
+        apply
+    :param data_min: minimum value of the data (can be used to override
+        the default scaling)
+    :param data_max: maximum value of the data (can be used to override
+        the default scaling)
     :return: normalized 1d array of data
     """
 
     data = np.array(data, dtype=float)
-    
-    if norm_type == 'minmax':
+
+    if norm_type == "minmax":
         d_min = data_min if data_min is not None else np.nanmin(data)
         d_max = data_max if data_max is not None else np.nanmax(data)
-        if d_max == d_min: # Prevent division by zero
+        if d_max == d_min:  # Prevent division by zero
             return np.zeros_like(data)
         return (data - d_min) / (d_max - d_min)
-        
-    elif norm_type == 'zscore':
+
+    elif norm_type == "zscore":
         mean = np.nanmean(data)
         std = np.nanstd(data)
         if std == 0:
             return np.zeros_like(data)
         return (data - mean) / std
-        
+
     else:
         raise ValueError("Unsupported normalization type. Use 'minmax' or 'zscore'.")
+
 
 def safe_value(val):
     """This function ensures that a value that we put into a pandas DataFrame
