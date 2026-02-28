@@ -92,9 +92,7 @@ SNIa_Lens = Lens(
     cosmo=COSMO,
 )
 
-PSF_DIRECTORY = os.path.join(
-    str(pathlib.Path(__file__).parent.parent), "TestData"
-)
+PSF_DIRECTORY = os.path.join(str(pathlib.Path(__file__).parent.parent), "TestData")
 
 DETECTOR_KWARGS = {
     "detector": 3,
