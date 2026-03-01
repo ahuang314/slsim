@@ -7,6 +7,8 @@ from astropy.nddata import Cutout2D
 from lenstronomy.Util.param_util import ellipticity2phi_q
 from slsim.Util.catalog_util import match_source
 
+# The pixel scale for the detection_images cutouts is 0.03 arcseconds per pixel
+PIXEL_SCALE = 0.03
 
 def process_catalog(cosmo, catalog_path):
     """This function filters out sources in the catalog so that only
@@ -189,7 +191,8 @@ def load_source(
     image = Cutout2D(data, coords, size).data
 
     # Scale the angular size of the COSMOS image so that it matches the source_dict
-    scale = 0.03 * angular_size / matched_source["angular_size"]
+    # lenstronomy's Interpol class needs the pixel scale, so that gets included here
+    scale = PIXEL_SCALE * angular_size / matched_source["angular_size"]
 
     # Rotate the COSMOS image so that it matches the angle given in source_dict
     phi = matched_source["sersic_angle"] - sersic_angle

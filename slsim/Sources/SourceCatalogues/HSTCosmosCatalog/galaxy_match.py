@@ -254,6 +254,7 @@ def load_source(
         image = file[hdu].data  # flux per pixel
 
     # Scale the angular size of the COSMOS image so that it matches the source_dict
+    # lenstronomy's Interpol class needs the pixel scale, so that gets included here
     scale = (
         matched_source["PIXEL_SCALE"] * angular_size / matched_source["angular_size"]
     )
