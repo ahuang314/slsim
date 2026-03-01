@@ -3,6 +3,7 @@ import numpy as np
 # This file contains functions commonly used by the CosmosWebCatalog and HSTCosmosCatalog
 # classes in Sources/SourceCatalogues/
 
+
 def match_source(
     angular_size,
     physical_size,

@@ -10,6 +10,7 @@ from slsim.Util.catalog_util import match_source
 # The pixel scale for the detection_images cutouts is 0.03 arcseconds per pixel
 PIXEL_SCALE = 0.03
 
+
 def process_catalog(cosmo, catalog_path):
     """This function filters out sources in the catalog so that only
     the nearby, well-resolved galaxies with high SNR remain. Thus, we
