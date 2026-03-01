@@ -18,7 +18,9 @@ def process_catalog(cosmo, catalog_path):
     :param catalog_path: path to the COSMOS_23.5_training_sample directory.
         Example: catalog_path = "/home/data/COSMOS_23.5_training_sample"
     :type catalog_path: string
-    :return: merged astropy table with only the well-resolved galaxies
+    :return: merged astropy table with only the well-resolved galaxies.
+        This astropy table is the same as the one that comes with the catalog,
+        but with some columns renamed for clarity, and extraneous columns removed.
     """
 
     catalog1_path = os.path.join(catalog_path, "real_galaxy_catalog_23.5.fits")

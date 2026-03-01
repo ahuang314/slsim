@@ -29,7 +29,9 @@ def process_catalog(cosmo, catalog_path):
         Documentation for this catalog can be found at:
         https://cosmos2025.iap.fr/catalog.html
     :type catalog_path: string
-    :return: merged astropy table with only the well-resolved galaxies
+    :return: merged astropy table with only the well-resolved galaxies.
+        This astropy table is the same as the one that comes with the catalog,
+        but with some columns renamed for clarity, and extraneous columns removed.
     """
 
     catalog_path = os.path.join(catalog_path, "COSMOSWeb_mastercatalog_v1.fits")
